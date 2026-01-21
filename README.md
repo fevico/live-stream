@@ -1,98 +1,113 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# ProFootball - Real-time Football Match Center Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This is a NestJS-based backend API for a real-time football match center, built as part of a take-home assessment.  
+It provides live match data, real-time event streaming, match-specific chat rooms, and a background simulator that generates realistic match events.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features Implemented
 
-## Description
+- **REST API**
+  - `GET /api/matches` — List all live/upcoming matches
+  - `GET /api/matches/:id` — Get detailed match information (score, minute, status, events, stats)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Server-Sent Events (SSE)**
+  - `GET /api/matches/:id/events/stream` — Real-time stream of match events
 
-## Project setup
+- **WebSocket / Socket.IO Real-time Communication**
+  - Room-based subscriptions per match
+  - Join / leave match rooms
+  - Broadcast match updates (score, minute, status, new events)
+  - Chat messaging in match-specific rooms
+  - Typing indicators
+  - User joined/left notifications
 
-```bash
-$ npm install
-```
+- **Background Match Simulator**
+  - Simulates 5 concurrent matches
+  - Advances match time (1 real second ≈ 1 match minute)
+  - Generates realistic events:
+    - Goals (~2.5 per match)
+    - Yellow cards (~3–4 per match)
+    - Full match lifecycle (NOT_STARTED → FIRST_HALF → HALF_TIME → SECOND_HALF → FULL_TIME)
 
-## Compile and run the project
+- **Persistence**
+  - Supabase PostgreSQL for match data storage
+  - In-memory caching not used — all updates go through the database
 
-```bash
-# development
-$ npm run start
+## Tech Stack
 
-# watch mode
-$ npm run start:dev
+- **Framework**: NestJS (TypeScript)
+- **Real-time**: Socket.IO (@nestjs/websockets)
+- **Database**: Supabase (PostgreSQL)
+- **Scheduling**: @nestjs/schedule (for simulator)
+- **Validation & DTOs**: Built-in NestJS pipes (class-validator optional)
+- **CORS**: Configured for all origins (`*`) in development
 
-# production mode
-$ npm run start:prod
-```
+## Project Structure (main folders)
 
-## Run tests
 
-```bash
-# unit tests
-$ npm run test
+## Setup Instructions
 
-# e2e tests
-$ npm run test:e2e
+### Prerequisites
 
-# test coverage
-$ npm run test:cov
-```
+- Node.js ≥ 18
+- PostgreSQL-compatible database (Supabase recommended)
 
-## Deployment
+### 1. Clone the repository
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+git clone <your-repo-url>
+cd <project-folder>
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+# Supabase credentials
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=your-anon-public-key
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+# Optional – change port if needed
+PORT=3000
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+4. Create Supabase table (if not already done)
+In Supabase dashboard → Table Editor → New Table: matches
+Columns (approximate types):
 
-## Resources
+id → int8 (primary key)
+home → text
+away → text
+score → text
+minute → int8
+status → text
+events → jsonb
+stats → jsonb
 
-Check out a few resources that may come in handy when working with NestJS:
+→ Enable RLS or use service_role key if you want stricter access (current setup uses anon key with public policies or RLS disabled for dev).
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Development mode (with hot-reload)
+npm run start:dev
 
-## Support
+# Or production build
+npm run build
+npm run start:prod
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-## Stay in touch
+# Api Documentation 
+Method,Endpoint,Description,Response Example
+GET,/api/matches,List all matches,Array of match objects
+GET,/api/matches/:id,Get single match details,Match object with events & stats
+GET,/api/matches/:id/events/stream,SSE stream of match events (real-time),text/event-stream
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
 
-## License
+Socket.IO Events (Client → Server)
+EventPayload ExampleDescriptionjoinMatch1 or { matchId: 1 }Join match roomleaveMatch1Leave match roomchatMessage{ matchId: 1, text: "Great goal!" }Send chat messagetyping{ matchId: 1, isTyping: true }Send typing indicator
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+Event,Payload Example,Description
+joinMatch,1 or { matchId: 1 },Join match room
+leaveMatch,1,Leave match room
+chatMessage,"{ matchId: 1, text: ""Great goal!"" }",Send chat message
+typing,"{ matchId: 1, isTyping: true }",Send typing indicator
+
+# All matches
+curl http://localhost:3000/api/matches
+
+# Single match
+curl http://localhost:3000/api/matches/1
+
+# SSE stream (open in browser or curl)
+http://localhost:3000/api/matches/1/events/stream

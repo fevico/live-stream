@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Football Match Tester</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+    #output { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Match Chat & Events</h2>
+  
+  Match ID: <input id="matchId" value="1" size="5">
+  <button onclick="join()">Join Match</button>
+  <br><br>
+  
+  Message: <input id="msg" placeholder="Type here..." style="width:300px">
+  <button onclick="sendMessage()">Send</button>
+  <button onclick="sendTyping()">I'm typing...</button>
+  
+  <div id="output"></div>
+
+  <script>
+    const socket = io('http://localhost:3000');
+    const output = document.getElementById('output');
+
+    function log(msg) {
+      output.innerHTML += `<p>${new Date().toLocaleTimeString()} → ${msg}</p>`;
+      output.scrollTop = output.scrollHeight;
+    }
+
+    socket.on('connect', () => log('Connected to server'));
+
+    socket.on('joinedMatch', data => log(`Joined match ${data.matchId}`));
+    socket.on('userJoined', () => log('Someone joined the room'));
+    socket.on('userLeft', () => log('Someone left the room'));
+    socket.on('chatMessage', data => log(`${data.user}: ${data.text}`));
+    socket.on('typing', () => log('Someone is typing...'));
+    socket.on('matchUpdate', data => {
+      log(`MATCH UPDATE: minute ${data.minute} | score ${data.score} | status ${data.status}`);
+      if (data.newEvent) log(`→ New event: ${data.newEvent.type} by ${data.newEvent.team}`);
+    });
+
+    function join() {
+      const mid = Number(document.getElementById('matchId').value);
+      socket.emit('joinMatch', mid);
+    }
+
+    function sendMessage() {
+      const mid = Number(document.getElementById('matchId').value);
+      const text = document.getElementById('msg').value.trim();
+      if (text) {
+        socket.emit('chatMessage', { matchId: mid, text });
+        document.getElementById('msg').value = '';
+      }
+    }
+
+    function sendTyping() {
+      const mid = Number(document.getElementById('matchId').value);
+      socket.emit('typing', { matchId: mid, isTyping: true });
+      setTimeout(() => {
+        socket.emit('typing', { matchId: mid, isTyping: false });
+      }, 2000);
+    }
+  </script>
+</body>
+</html> 

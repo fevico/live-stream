@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { SupabaseService } from './supabase.service';
 
-@Module({})
+@Module({
+  providers: [SupabaseService]
+})
 export class SupabaseModule {}
